@@ -1,0 +1,37 @@
+[project]
+name = "ragkit"
+version = "0.1.0"
+description = "The RAG Encyclopedia — companion library: production-grade, all-open RAG components."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Victor B." }]
+
+# Phase-1 scaffold: dependencies are pinned in Phase 2 as each module is implemented.
+# The reference stack is all-open and runnable without paid API keys.
+dependencies = [
+  "qdrant-client>=1.12",      # vector store (Ch 5)
+  "sentence-transformers>=3",  # embeddings + cross-encoder reranker (Ch 4, 7)
+  "rank-bm25>=0.2",            # sparse leg of hybrid (Ch 6)
+  "pydantic>=2",               # core contracts / config (ragkit/core)
+  "pyyaml>=6",                 # config loader
+  "numpy>=1.26",
+  "typer>=0.12",               # CLI for the eval harness (Ch 14)
+]
+
+[project.optional-dependencies]
+# Install only what a given Part needs. `pip install -e ".[all]"` for everything.
+architectures = ["networkx>=3", "graspologic>=3"]   # graph RAG (Ch 9)
+multimodal    = ["pillow>=10", "colpali-engine>=0.3"] # ColPali visual retrieval (Ch 12)
+serving       = ["vllm>=0.6"]                          # generator serving (Ch 16)
+eval          = ["ragas>=0.2", "pandas>=2"]            # eval harness (Ch 14)
+managed       = ["voyageai", "google-genai", "cohere"] # optional managed-provider swaps
+dev           = ["jupyter", "ruff", "pytest"]
+all           = ["ragkit[architectures,multimodal,serving,eval,managed,dev]"]
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

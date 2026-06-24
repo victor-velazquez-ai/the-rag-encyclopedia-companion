@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Env / secrets
+.env
+
+# Data artifacts (the prepare script regenerates these; raw cards are tracked)
+data/cache/
+data/*.parquet
+*.duckdb
+
+# Model weights / caches
+.cache/
+models/
+
+# Local Qdrant storage (if run outside Docker)
+qdrant_storage/
+
+# OS
+.DS_Store
+Thumbs.db
