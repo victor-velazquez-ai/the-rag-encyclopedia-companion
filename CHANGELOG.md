@@ -33,5 +33,11 @@
   - `retrieval/context` — `ContextBuilder` lost-in-the-middle zipper fold + MMR (Ch 8), pure + tested.
   - Package `__init__`s export the conveniences (`from ragkit.retrieval import HybridRetriever`, ...).
 - **37 unit tests pass**; verified end-to-end on the pure path (chunk → BM25 → context fold) with no key.
-- Remaining: per-chapter notebooks, parsing (Ch 2), query transforms/routing (Ch 6), architectures
-  (Ch 9–12), security/serving/observability (Ch 15/16), the eval reproduction suite, and `capstone/`.
+- **First per-chapter walkthroughs (notebooks) — all offline, no API key:**
+  - `tools/py2nb.py` — pure-Python percent-script → `.ipynb` converter (notebooks are generated from
+    runnable scripts, so code + notebook never drift).
+  - Ch 3 chunking, Ch 6 hybrid+RRF, Ch 8 lost-in-the-middle + MMR, Ch 14 retrieval metrics — each a
+    paired `.py` (verified by execution) + `.ipynb`, narrating one technique against `ragkit`.
+- Remaining: the rest of the notebooks (incl. key-requiring Ch 4/7/13), parsing (Ch 2), query
+  transforms/routing (Ch 6), architectures (Ch 9–12), security/serving/observability (Ch 15/16),
+  the eval reproduction suite, and `capstone/`.
