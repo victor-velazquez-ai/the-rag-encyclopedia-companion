@@ -1,0 +1,8 @@
+{"query": "refund within thirty days", "relevant": ["d1"]}
+{"query": "ERR_CONN_4021 handshake", "relevant": ["d2"]}
+{"query": "rate limit 429 requests", "relevant": ["d6"]}
+{"query": "express delivery business days", "relevant": ["d3"]}
+{"query": "two-factor authentication password", "relevant": ["d4"]}
+{"query": "forgotten password reset link", "relevant": ["d8"]}
+{"query": "subscription pro free tier", "relevant": ["d7"]}
+{"query": "retention policy", "relevant": ["d5"], "gains": {"d5": 1.0}}
