@@ -1,54 +1,115 @@
 """ragkit.eval — the evaluation harness: the book's spine, made runnable (Book Ch 14).
 
-The thesis is operational here: *measurement licenses complexity.* No technique earns a place in
-the pipeline because it is sophisticated — only because a number on a held-out set moved, and stayed
-moved, when you turned it on. This module is the instrument that produces that number, and every
-chapter's `reproduce.py` calls into it.
+*Measurement licenses complexity.* No technique earns a place because it is sophisticated — only
+because a number on a held-out set moved, and stayed moved, when you turned it on. This module
+produces that number. The one non-negotiable conceptual move: retrieval failure and generation
+failure are orthogonal, so the harness scores RETRIEVAL separately against its own ground truth.
 
-The one non-negotiable conceptual move: *retrieval failure and generation failure are orthogonal,*
-so the harness scores them SEPARATELY against their own ground truth and never debugs from
-end-to-end accuracy alone (a high retrieval / suspiciously-high generation pair means the model
-answered from parametric memory, not your evidence — the dangerous case).
-
-    golden_set.py   the version-controlled query set with known-good outputs (relevant docs and/or
-                    reference answers) — the unit-test fixture of RAG. Representative of real
-                    traffic, stable across weeks, grown from production failures. Synthetic
-                    generation (RAGAS knowledge-graph evolutions: single-hop / multi-context /
-                    reasoning; ARES with PPI) solves cold start — always spot-checked against humans.
-    metrics.py      retrieval metrics — nDCG@k (the RAG default; graded relevance + full ordering,
-                    k set to the REAL context depth), Recall@k (the floor alarm), MRR (single-hit
-                    tasks) — and generation metrics kept separate: faithfulness, answer relevance,
-                    answer correctness. Faithful is not correct: track them apart.
-    ragas.py        RAGAS-style reference-free scoring (Faithfulness, Answer Relevance, Context
-                    Precision@K, Context Recall; Noise Sensitivity / Answer Correctness where
-                    references exist). The production default — good enough to ship, cheap enough to
-                    run every CI build — treated as the LLM-judge scores they are.
-    judge.py        LLM-as-judge calibration — ~85% human agreement licenses automation, but never
-                    raw: POSITION-SWAP consistency gating first (judge twice, swap order, count only
-                    agreements), a CROSS-FAMILY judge against self-enhancement (+10% to +25%), and
-                    PPI over a few hundred human anchor labels for defensible confidence intervals.
-    suite.py        the `python -m ragkit.eval.suite --all` runner the Makefile's `make reproduce`
-                    target invokes — re-runs every chapter's head-to-head on the golden set.
-
-`Harness` runs a config against a `GoldenSet` and returns the stage-wise scorecard plus a cost
-number; the book's argument is never quality alone.
-
-Phase-1 scaffold: the surface is sketched below; implementations land in Phase 2.
+``GoldenSet`` is the version-controlled query set (queries + relevant-doc ground truth). ``Harness``
+runs a retriever over it and returns a ``Scorecard`` — mean nDCG@k / Recall@k / MRR plus a cost
+number, because the book's argument is never quality alone. Generation-side metrics (faithfulness,
+answer relevance) and LLM-judge calibration are Phase 2+; retrieval scoring is implemented here.
 """
 
-# --- Phase-2 target (spec) ----------------------------------------------------
-# class GoldenSet:
-#     """A version-controlled set of queries with relevant-doc and/or reference-answer ground truth."""
-#     @classmethod
-#     def load(cls, name: str = "default") -> "GoldenSet": ...
-#     def __iter__(self): ...    # yields (query, relevant_docs, reference_answer)
-# class Harness:
-#     """Runs a pipeline config over a GoldenSet; scores retrieval and generation SEPARATELY,
-#     plus a cost number. Calibrates any LLM judge before trusting it."""
-#     @classmethod
-#     def default(cls) -> "Harness": ...
-#     def run(self, pipeline, golden: "GoldenSet") -> "Scorecard":
-#         """Return stage-wise quality (nDCG@k, Recall@k; faithfulness, relevance, correctness) + cost."""
-#         ...
+from __future__ import annotations
 
-__all__ = ["Harness", "GoldenSet"]  # populated in Phase 2
+import json
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from ragkit.eval.metrics import mrr, ndcg_at_k, recall_at_k
+
+
+@dataclass
+class GoldenItem:
+    query: str
+    relevant: set[str]
+    gains: dict[str, float] = field(default_factory=dict)  # graded relevance; defaults to 1.0 each
+    reference_answer: str | None = None
+
+    def gain_map(self) -> dict[str, float]:
+        return self.gains or {d: 1.0 for d in self.relevant}
+
+
+@dataclass
+class GoldenSet:
+    items: list[GoldenItem]
+
+    def __iter__(self) -> Iterator[GoldenItem]:
+        return iter(self.items)
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+    @classmethod
+    def from_items(cls, rows: list[dict]) -> "GoldenSet":
+        return cls(
+            [
+                GoldenItem(
+                    query=r["query"],
+                    relevant=set(r["relevant"]),
+                    gains={k: float(v) for k, v in r.get("gains", {}).items()},
+                    reference_answer=r.get("reference_answer"),
+                )
+                for r in rows
+            ]
+        )
+
+    @classmethod
+    def from_jsonl(cls, path: str | Path) -> "GoldenSet":
+        rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+        return cls.from_items(rows)
+
+
+@dataclass
+class Scorecard:
+    name: str
+    n: int
+    ndcg: float
+    recall: float
+    mrr: float
+    cost_usd: float = 0.0
+
+    def row(self) -> str:
+        return (f"{self.name:<28} nDCG@k {self.ndcg:.3f}  Recall@k {self.recall:.3f}  "
+                f"MRR {self.mrr:.3f}  ${self.cost_usd:.4f}  (n={self.n})")
+
+
+class Harness:
+    """Runs a retriever over a GoldenSet and scores retrieval quality (Ch 14)."""
+
+    @classmethod
+    def default(cls) -> "Harness":
+        return cls()
+
+    def score_retrieval(
+        self,
+        name: str,
+        retriever: Callable[[str], list[str]],
+        golden: GoldenSet,
+        *,
+        k: int = 5,
+        cost_usd: float = 0.0,
+    ) -> Scorecard:
+        """Score a retriever (``query -> ranked doc ids``) on the golden set, averaged over queries."""
+        n = len(golden)
+        if n == 0:
+            return Scorecard(name, 0, 0.0, 0.0, 0.0, cost_usd)
+        s_ndcg = s_recall = s_mrr = 0.0
+        for item in golden:
+            ranked = retriever(item.query)
+            s_ndcg += ndcg_at_k(ranked, item.gain_map(), k)
+            s_recall += recall_at_k(ranked, item.relevant, k)
+            s_mrr += mrr(ranked, item.relevant)
+        return Scorecard(name, n, s_ndcg / n, s_recall / n, s_mrr / n, cost_usd)
+
+    def compare(self, named_retrievers: dict[str, Callable[[str], list[str]]], golden: GoldenSet,
+                *, k: int = 5) -> list[Scorecard]:
+        """Score several retrievers on the same golden set; return cards sorted by nDCG (best first)."""
+        cards = [self.score_retrieval(name, r, golden, k=k) for name, r in named_retrievers.items()]
+        cards.sort(key=lambda c: -c.ndcg)
+        return cards
+
+
+__all__ = ["Harness", "GoldenSet", "GoldenItem", "Scorecard"]

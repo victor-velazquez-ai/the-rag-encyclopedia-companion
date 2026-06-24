@@ -1,0 +1,8 @@
+{"id": "d1", "title": "Refund Policy", "text": "Customers may request a refund within thirty days of purchase. Refunds are issued to the original payment method."}
+{"id": "d2", "title": "Connection Errors", "text": "The error code ERR_CONN_4021 indicates the server refused the connection during the TLS handshake."}
+{"id": "d3", "title": "Shipping Times", "text": "Standard delivery takes five to seven business days. Express delivery arrives in two business days."}
+{"id": "d4", "title": "Account Security", "text": "Enable two-factor authentication to protect your account. Passwords must be at least twelve characters long."}
+{"id": "d5", "title": "Data Retention", "text": "Logs are kept for ninety days and then permanently deleted from all systems."}
+{"id": "d6", "title": "Rate Limits", "text": "The API allows one thousand requests per minute. Exceeding the limit returns a 429 status code."}
+{"id": "d7", "title": "Subscription Plans", "text": "The Pro tier includes priority support and unlimited projects. The Free tier is limited to three projects."}
+{"id": "d8", "title": "Password Reset", "text": "To reset a forgotten password, click the forgot-password link and follow the emailed instructions."}

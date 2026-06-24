@@ -38,6 +38,15 @@
     runnable scripts, so code + notebook never drift).
   - Ch 3 chunking, Ch 6 hybrid+RRF, Ch 8 lost-in-the-middle + MMR, Ch 14 retrieval metrics — each a
     paired `.py` (verified by execution) + `.ipynb`, narrating one technique against `ragkit`.
+- **Eval harness + runnable reproduction (Ch 14), all offline:**
+  - `ragkit.eval`: `GoldenSet` (jsonl loader), `Harness` (scores a retriever's nDCG@k/Recall@k/MRR over
+    the golden set), `Scorecard`. Pure + tested.
+  - Committed sample data: `data/corpus_small/docs.jsonl` (8 docs) + `data/golden/qa.jsonl` (8 queries);
+    `data/prepare.py` verifies them (no download). 
+  - `ragkit.eval.suite` (`make reproduce`): body-only BM25 vs BM25 body+title RRF fusion on the golden
+    set — a real measured delta (+0.033 nDCG@5; fusion recovers a title-only-vocabulary query) with a
+    cost column, no API key. `chapters/ch14-evaluation/reproduce.py` runs it.
+  - **42 unit tests pass.**
 - Remaining: the rest of the notebooks (incl. key-requiring Ch 4/7/13), parsing (Ch 2), query
   transforms/routing (Ch 6), architectures (Ch 9–12), security/serving/observability (Ch 15/16),
-  the eval reproduction suite, and `capstone/`.
+  keyed reproductions, and `capstone/`.
