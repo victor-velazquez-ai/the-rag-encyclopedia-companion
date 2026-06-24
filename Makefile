@@ -2,7 +2,7 @@
 # Each `make chNN` opens that chapter's walkthroughs; `make reproduce` runs the book's experiments.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup up down data reproduce $(addprefix ch,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16)
+.PHONY: help setup up down data reproduce capstone test $(addprefix ch,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16)
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -20,8 +20,14 @@ setup:  ## Install ragkit + dev deps and load the sample data
 data:  ## Download/prepare the sample corpus + golden sets (small, no keys)
 	python -m data.prepare
 
-reproduce:  ## Run the full "expensive doesn't always win" experiment suite
+reproduce:  ## Run the "expensive doesn't always win" experiment suite (offline)
 	python -m ragkit.eval.suite --all
+
+capstone:  ## Run the assembled end-to-end RAG pipeline over the sample corpus
+	python -m capstone.app.run
+
+test:  ## Run the unit tests (no API key needed)
+	python -m pytest tests/ -q
 
 # --- Per-chapter walkthroughs (launch the chapter's notebooks) ---------------
 ch02:  ## Chapter 2 — Document Processing
