@@ -16,6 +16,9 @@ mismatch that silently sinks recall), which is why each stage commits to a defen
 Phase-1 scaffold. Phase 2 exports the top-level conveniences: Chunker, Embedder, VectorStore.
 """
 
-# Phase 2 will export: Chunker (Ch 3), Embedder (Ch 4), VectorStore (Ch 5).
 # Parsing is exposed through a `parse()` entry point rather than a single class (Ch 2).
+from ragkit.ingestion.chunking import Chunker
+from ragkit.ingestion.embedding import Embedder
+from ragkit.ingestion.indexing import VectorStore
+
 __all__ = ["Chunker", "Embedder", "VectorStore"]

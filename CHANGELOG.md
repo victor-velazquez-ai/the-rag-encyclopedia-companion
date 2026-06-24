@@ -24,7 +24,14 @@
   system prompt with span citation + abstention; Claude default, OpenAI swap; lazy SDK imports.
 - **Pure spine components implemented + tested**: `retrieval/hybrid/fusion.rrf_fuse` (RRF, Ch 6) and
   `eval/metrics` (recall@k, MRR, nDCG@k, Ch 14).
-- **20 unit tests pass** (`pytest`) — verify with no API key or network.
-- Remaining: per-chapter notebooks, the rest of `ragkit` (parsing/chunking/embedding/indexing/
-  retrieval/rerank/context/architectures/security/serving/observability), the eval reproduction
-  suite, and the assembled `capstone/`.
+- **Ingestion + retrieval stack implemented**:
+  - `ingestion/chunking` — `Chunker` recursive ~200-tok structure-aware baseline (Ch 3), pure + tested.
+  - `ingestion/embedding` — `Embedder` (OpenAI default, Voyage/Qwen3 swaps; query/doc asymmetry; MRL), lazy.
+  - `ingestion/indexing` — `VectorStore` over Qdrant (filterable HNSW, int8+rescore, ACL filter), lazy.
+  - `retrieval/hybrid` — pure `BM25` + `HybridRetriever` (BM25 + dense, RRF-fused).
+  - `retrieval/rerank` — `Reranker` LLM-listwise default (reuses generation provider) + Cohere/jina swaps.
+  - `retrieval/context` — `ContextBuilder` lost-in-the-middle zipper fold + MMR (Ch 8), pure + tested.
+  - Package `__init__`s export the conveniences (`from ragkit.retrieval import HybridRetriever`, ...).
+- **37 unit tests pass**; verified end-to-end on the pure path (chunk → BM25 → context fold) with no key.
+- Remaining: per-chapter notebooks, parsing (Ch 2), query transforms/routing (Ch 6), architectures
+  (Ch 9–12), security/serving/observability (Ch 15/16), the eval reproduction suite, and `capstone/`.
