@@ -1,20 +1,15 @@
-"""Reproduce the headline experiments of Book Chapter 6 — Retrieval & Query Understanding.
+"""Chapter 6 reproduction — does hybrid fusion beat a single leg? (offline, no API key)
 
-Two head-to-head comparisons on the version-controlled golden set, each printing a quality number
-*and* a cost number (the chapter's argument is never quality alone):
+Scores body-only BM25 against a BM25 body+title RRF fusion on the golden set, printing the quality
+delta with a cost column. Fusion recovers queries whose vocabulary lives only in one field — the same
+mechanism by which adding a dense leg recovers paraphrase that BM25 misses. The dense-vs-hybrid and
+HyDE-on-strong-vs-weak comparisons need embeddings (a key); the method is identical — add the leg,
+re-score, read the delta. This delegates to the shared reproduction suite (ragkit.eval.suite).
 
-  1. hybrid+RRF vs. dense-only — does fusing BM25 + dense with Reciprocal Rank Fusion (k=60) beat
-     either leg alone? Watch the identifier-bearing queries (order numbers, error strings, SKUs)
-     where the single pooled dense vector blurs the join key and BM25 carries the recall.
-       metrics: nDCG@10, Recall@k (quality) · added latency, $/1k queries (cost)
-
-  2. HyDE on a strong vs. a weak embedder — the +16 to +32 nDCG@10 lift HyDE shows against an
-     unsupervised embedder, and how it shrinks toward zero (and can reverse) against a modern
-     fine-tuned one — while still paying a full pre-retrieval LLM call in latency.
-       metrics: nDCG@10 delta (quality) · pre-retrieval LLM-call latency (cost)
-
-Phase 2 wires these to ragkit.retrieval.{hybrid,query,routing} and ragkit.eval against data/golden/.
+    python chapters/ch06-retrieval/reproduce.py
 """
 
+from ragkit.eval.suite import main
+
 if __name__ == "__main__":
-    print("Phase 2 — see README.md")
+    main()

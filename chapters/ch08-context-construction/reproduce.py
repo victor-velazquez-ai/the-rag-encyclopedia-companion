@@ -1,22 +1,32 @@
-"""Reproduce the headline experiments of Book Chapter 8 — Context Construction & Assembly.
+"""Chapter 8 reproduction — the lost-in-the-middle fold, demonstrated (offline, no API key)
 
-Two head-to-head comparisons on the version-controlled golden set, each printing a quality number
-*and* a cost number (most of this chapter's wins require no model call at all):
+Holds the retrieved passage *set* fixed and varies only the assembly order: rank-order vs. the zipper
+fold (rank 1 first, rank 2 last, zippering inward). Shows where each passage lands so you can see the
+strongest evidence move onto the two attention peaks and the weakest into the dead middle. Measuring
+the *quality* delta needs an LLM judge (a key); the reordering itself — the part that costs nothing —
+is what you reclaim for free, shown here.
 
-  1. lost-in-the-middle ordering — hold retrieval and the passage *set* fixed and vary only the
-     assembly order: rank-order vs. the zipper fold (rank 1 first, rank 2 last, zippering inward)
-     vs. a random shuffle. The delta between rank-order and the fold is the lost-in-the-middle tax
-     you reclaim for free — the cheapest point on the chapter's price-performance curve.
-       metrics: exact-match / LLM-judge faithfulness (quality) · zero added latency (cost)
-
-  2. compression vs. retrieve-less — does a LLMLingua compressor (LongLLMLingua / LLMLingua-2) beat
-     the honest baseline of "just send fewer, better passages" once you charge the compressor for
-     its *own* call? Measured at matched output-token budgets, compressor cost included — the
-     accounting the vendor numbers omit.
-       metrics: end-task accuracy (quality) · total latency + tokens, compressor included (cost)
-
-Phase 2 wires these to ragkit.retrieval.context and ragkit.eval against data/golden/.
+    python chapters/ch08-context-construction/reproduce.py
 """
 
+from ragkit.retrieval.context import reorder_lost_in_middle
+
+RANKED = [f"R{i} (rank {i})" for i in range(1, 8)]  # a reranked shortlist, strongest first
+
+
+def main() -> None:
+    folded = reorder_lost_in_middle(RANKED)
+    n = len(folded)
+    print("\nAssembly order (set fixed, only the ORDER changes):\n")
+    print("  position | rank-order      | zipper fold")
+    print("  ---------|-----------------|-----------------")
+    for i in range(n):
+        peak = " <- attention peak" if i == 0 or i == n - 1 else ""
+        print(f"  {i:>8} | {RANKED[i]:<15} | {folded[i]:<15}{peak}")
+    print("\n  The fold puts rank 1 and rank 2 on the start/end peaks and buries the weakest passage")
+    print("  in the low-attention middle. Zero added latency. Measuring the answer-quality lift")
+    print("  needs an LLM judge (a key); the reordering is the free win.\n")
+
+
 if __name__ == "__main__":
-    print("Phase 2 — see README.md")
+    main()
