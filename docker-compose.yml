@@ -1,0 +1,14 @@
+# One command to stand up the local, no-API-key stack: `docker compose up -d`.
+# Qdrant is the only required service (the book's reference vector store, Ch 5).
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"   # REST + dashboard at http://localhost:6333/dashboard
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
