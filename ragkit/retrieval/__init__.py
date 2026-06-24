@@ -9,5 +9,8 @@
 Phase-1 scaffold. Phase 2 exports the top-level conveniences: HybridRetriever, Reranker.
 """
 
-# Phase 2 will export: HybridRetriever (Ch 6), Reranker (Ch 7), ContextBuilder (Ch 8)
+from ragkit.retrieval.context import ContextBuilder
+from ragkit.retrieval.hybrid import HybridRetriever
+from ragkit.retrieval.rerank import Reranker
+
 __all__ = ["HybridRetriever", "Reranker", "ContextBuilder"]

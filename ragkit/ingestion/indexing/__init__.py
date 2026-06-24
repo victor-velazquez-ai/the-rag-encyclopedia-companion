@@ -1,41 +1,129 @@
 """ragkit.ingestion.indexing — where the vectors live and how you find them fast (Book Ch 5).
 
-The least glamorous component and the one whose failures are most silent: a bad index returns
-plausible neighbors that are merely *not the nearest ones*, and you never see it unless you measure
-recall against an exhaustive baseline. The chapter standardizes on *Qdrant* precisely because it
-exposes the mechanisms that matter — filterable HNSW, in-index quantization, tunable search — rather
-than hiding them behind one "search" call.
+A bad index returns plausible neighbors that are merely *not the nearest ones*, and you never see it
+unless you measure recall against an exhaustive baseline. The companion standardizes on **Qdrant**
+(local Docker) because it exposes the mechanisms the chapter cares about — filterable HNSW, in-index
+quantization, tunable search — rather than hiding them behind one "search" call.
 
-    store.py        Qdrant setup + collection config; HNSW (m 16-32, ef_construct 128-256) default
-    ann.py          the four ANN families: HNSW (in-RAM default) · IVF-PQ · ScaNN · DiskANN (out-of-RAM)
-    filtered.py     filterable HNSW — payload-aware edges + brute-force-below-threshold (never naive post-filter)
-    quantize.py     in-index quantization: int8/SQ8 by default; RaBitQ (error-bounded 1-bit, 32×) at scale
-    freshness.py    incremental insert (cheap) vs. delete (tombstone + compaction); compaction scheduling
+This ``VectorStore`` wraps Qdrant with the chapter's defaults: HNSW + int8 scalar quantization with a
+full-precision rescore (``quantize for the first pass, rescore the shortlist``), and *filterable* HNSW
+so an access-control / metadata filter rides inside the ANN traversal — never a naive post-filter,
+which silently collapses recall on selective filters (the Ch 15 security path depends on this).
 
-One ``VectorStore`` facade over Qdrant. The chapter's load-bearing rules: choose the index by your
-*binding constraint* (fits in RAM → HNSW; out of RAM, one node → DiskANN; memory-bound at scale →
-RaBitQ); treat *filtered ANN* as a first-class index requirement — naive post-filtering silently
-collapses recall on selective or security-bearing filters; and obey the master pattern under all of
-it — *quantize for the first pass, rescore the shortlist with full precision* (always oversample for
-1-bit). Design for the delete, not just the insert: tombstones are cheap now, costly later.
-
-Phase-1 scaffold: the facade's surface is sketched below; implementations land in Phase 2.
+SDK import is lazy; this module imports without ``qdrant-client`` installed.
 """
 
-# --- Phase-2 target (spec) ----------------------------------------------------
-# class VectorStore:
-#     """Facade over Qdrant. `VectorStore.default()` → filterable HNSW + int8/SQ8 + float rescore."""
-#     @classmethod
-#     def default(cls) -> "VectorStore":
-#         """Qdrant collection: HNSW (m=16, ef_construct=128), int8 quantization, rescore on."""
-#         ...
-#     @classmethod
-#     def connect(cls, url: str, *, index: str = "hnsw", quantization: str = "int8") -> "VectorStore":
-#         # index: "hnsw" | "diskann" ; quantization: "none" | "int8" | "binary" | "rabitq"
-#         ...
-#     def upsert(self, chunks: list) -> None: ...                     # incremental insert into the graph
-#     def search(self, vector, top_k: int = 10, *, filter=None, oversample: int = 4) -> list:
-#         """Filter-aware ANN: payload-aware HNSW, oversampled first pass, full-precision rescore."""
-#         ...
+from __future__ import annotations
 
-__all__ = ["VectorStore"]  # populated in Phase 2
+import os
+from dataclasses import dataclass, field
+from typing import Any
+
+from ragkit.core.schema import Chunk
+
+
+@dataclass
+class Hit:
+    id: str
+    score: float
+    chunk: Chunk
+
+
+@dataclass
+class VectorStore:
+    """Facade over a Qdrant collection. ``default()`` → filterable HNSW + int8 + rescore."""
+
+    collection: str = "ragkit"
+    url: str = field(default_factory=lambda: os.environ.get("QDRANT_URL", "http://localhost:6333"))
+    dim: int = 3072  # text-embedding-3-large
+    quantization: str = "int8"
+    _client: Any = None
+
+    @classmethod
+    def default(cls, **kw) -> "VectorStore":
+        return cls(**kw)
+
+    @classmethod
+    def connect(cls, url: str = "", *, collection: str = "ragkit", dim: int = 3072,
+                quantization: str = "int8") -> "VectorStore":
+        vs = cls(collection=collection, url=url or os.environ.get("QDRANT_URL", "http://localhost:6333"),
+                 dim=dim, quantization=quantization)
+        vs.ensure_collection()
+        return vs
+
+    def client(self):
+        if self._client is None:
+            from qdrant_client import QdrantClient  # lazy
+
+            self._client = QdrantClient(url=self.url)
+        return self._client
+
+    def ensure_collection(self) -> None:
+        from qdrant_client import models as qm  # lazy
+
+        c = self.client()
+        if c.collection_exists(self.collection):
+            return
+        quant = None
+        if self.quantization == "int8":
+            quant = qm.ScalarQuantization(
+                scalar=qm.ScalarQuantizationConfig(type=qm.ScalarType.INT8, always_ram=True)
+            )
+        elif self.quantization == "binary":
+            quant = qm.BinaryQuantization(binary=qm.BinaryQuantizationConfig(always_ram=True))
+        c.create_collection(
+            collection_name=self.collection,
+            vectors_config=qm.VectorParams(size=self.dim, distance=qm.Distance.COSINE),
+            hnsw_config=qm.HnswConfigDiff(m=16, ef_construct=128),
+            quantization_config=quant,
+        )
+
+    def upsert(self, chunks: list[Chunk]) -> None:
+        """Insert chunks (each must carry an ``embedding``). Incremental — extends the HNSW graph."""
+        from qdrant_client import models as qm  # lazy
+
+        points = [
+            qm.PointStruct(
+                id=i,
+                vector=ch.embedding,
+                payload={"chunk_id": ch.id, "text": ch.text, "doc_id": ch.doc_id,
+                         "allowed_groups": ch.allowed_groups, **ch.tags},
+            )
+            for i, ch in enumerate(chunks)
+            if ch.embedding is not None
+        ]
+        self.client().upsert(collection_name=self.collection, points=points)
+
+    def search(self, vector, top_k: int = 10, *, allowed_groups: list[str] | None = None,
+               oversample: int = 4) -> list[Hit]:
+        """Filter-aware ANN: oversampled first pass + full-precision rescore (Ch 5).
+
+        If ``allowed_groups`` is given, the ACL filter rides *inside* the HNSW traversal (Ch 15).
+        """
+        from qdrant_client import models as qm  # lazy
+
+        qfilter = None
+        if allowed_groups:
+            qfilter = qm.Filter(
+                must=[qm.FieldCondition(key="allowed_groups", match=qm.MatchAny(any=allowed_groups))]
+            )
+        params = qm.SearchParams(
+            quantization=qm.QuantizationSearchParams(rescore=True, oversampling=oversample)
+        )
+        res = self.client().query_points(
+            collection_name=self.collection, query=vector, limit=top_k,
+            query_filter=qfilter, search_params=params, with_payload=True,
+        ).points
+        return [
+            Hit(
+                id=p.payload.get("chunk_id", str(p.id)),
+                score=p.score,
+                chunk=Chunk(id=p.payload.get("chunk_id", str(p.id)), text=p.payload.get("text", ""),
+                            doc_id=p.payload.get("doc_id", ""),
+                            allowed_groups=p.payload.get("allowed_groups", [])),
+            )
+            for p in res
+        ]
+
+
+__all__ = ["VectorStore", "Hit"]
