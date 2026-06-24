@@ -1,20 +1,64 @@
-"""Chapter 11 experiment — single-shot vs. agentic multi-hop, and the entity-resolution lift.
+"""Chapter 11 reproduction — entity-resolution accuracy on alias pairs (offline, no API key).
 
-Reproduces the master-map comparisons for this chapter on the golden set:
+The chapter's differentiator is the canonical-ID layer, not the agentic loop. This runnable check
+builds a small crosswalk and scores the matcher's deterministic-then-fuzzy stack on labeled alias
+pairs: each surface form should resolve to its true canonical id (or to None for an out-of-corpus
+mention). It reports accuracy and, separately, the false-merge count - because over-merging is the
+asymmetric error the chapter says to fear most.
 
-  * Single-shot vs. agentic multi-hop on a genuinely compositional question set (MultiHop-RAG /
-    FRAMES-style). Beyond final-answer EM/F1, reports per-hop intermediate accuracy (the chain's
-    ceiling is the product of its hops), hop-count distribution, and non-termination rate — and
-    licenses the loop on correctness-lift-per-dollar over single-shot on the routed subset, not on
-    aggregate accuracy (which the complexity gate's routing confounds).
-  * Entity resolution — cross-source retrieval completeness for entity-centric queries with the
-    canonical-ID layer on vs. off (the lift that pays for the pipeline), plus matcher pairwise
-    precision/recall and the false-merge rate, since over-merging's cost is asymmetric.
+The agentic loop (AgenticRAG) and the keyed multi-hop comparison need a generation key; this offline
+slice exercises the precision substrate that runs on every query.
 
-Every comparison prints quality AND cost.
-
-Phase 1: this is a stub. The runnable experiment lands in Phase 2.
+    python chapters/ch11-agentic-rag/reproduce.py
 """
 
+from __future__ import annotations
+
+from ragkit.architectures.agentic import EntityResolver
+
+
+def _build_resolver() -> EntityResolver:
+    r = EntityResolver()
+    r.add_canonical("acme", "Acme Inc", "Acme, Inc.", "ACME Corporation")
+    r.add_canonical("ibm", "IBM", "International Business Machines")
+    r.add_canonical("globex", "Globex", "Globex Corp")
+    return r
+
+
+# (surface form, expected canonical id or None)
+_CASES: list[tuple[str, str | None]] = [
+    ("acme inc", "acme"),          # deterministic (normalized exact)
+    ("ACME, Inc.", "acme"),        # deterministic
+    ("I.B.M.", "ibm"),             # fuzzy (despaced acronym)
+    ("International Business Machines", "ibm"),  # deterministic
+    ("Globex Corporation", "globex"),  # deterministic (suffix-stripped)
+    ("Initech", None),             # clean miss (out of corpus)
+    ("Umbrella Corp", None),       # clean miss
+]
+
+
+def main() -> None:
+    resolver = _build_resolver()
+    correct = 0
+    false_merges = 0  # resolved to an id when the truth is None, or to the WRONG id
+    print("surface form                         expected   got        ok")
+    print("-" * 64)
+    for surface, expected in _CASES:
+        got = resolver.resolve(surface)
+        ok = got == expected
+        correct += ok
+        if not ok and got is not None:
+            false_merges += 1
+        print(f"{surface:<36} {str(expected):<10} {str(got):<10} {'OK' if ok else 'X'}")
+
+    n = len(_CASES)
+    print("-" * 64)
+    print(f"accuracy:      {correct}/{n} = {correct / n:.0%}")
+    print(f"false merges:  {false_merges} (resolved to a wrong/spurious id - the asymmetric error)")
+    assert correct == n, "entity-resolution accuracy regressed"
+    assert false_merges == 0, "a false merge slipped through - over-merging is the costly error"
+    print("\nPASS - deterministic-then-fuzzy resolves every alias and merges nothing it should not.")
+
+
 if __name__ == "__main__":
-    print("Phase 2 — see README.md")
+    main()

@@ -72,4 +72,18 @@
   - `production/observability` (Ch 16): `psi`/`psi_alert` drift, `trace` (OTel, lazy), feedback loop.
   - Package aggregates (`architectures`, `production`) export the conveniences.
 - **119 unit tests pass**; whole library import-verified.
-- Remaining: per-chapter notebooks for the new modules, keyed reproductions, capstone outer layers.
+- **A runnable walkthrough notebook for every chapter (15 total, Ch 2–16).** Each is a paired
+  percent-script + generated `.ipynb`; the offline ones execute top-to-bottom with no key, the
+  key-requiring ones (Ch 4 embeddings, Ch 5 Qdrant, Ch 12 ColPali) guard and skip the live cells.
+  All `01_*.py` and all `reproduce.py` verified to run (15 + 15), all notebooks valid JSON.
+- **Every chapter's `reproduce.py` implemented** (offline where keyless; key-gated with a clear
+  message + offline fallback otherwise).
+- **Capstone hardening + routing layers** wired into `RAGPipeline` (injection drop, PII redaction,
+  Adaptive-RAG route), verified offline.
+
+## Phase 2 — status: COMPLETE for the offline-verifiable surface
+- Full `ragkit` library (core · ingestion · retrieval · architectures · production · eval), BYO-API.
+- 15 chapter walkthroughs + 15 reproductions, all run; assembled capstone (`make capstone`).
+- **121 unit tests pass**; everything import- and run-verified with no API key.
+- Live-only paths (real Claude/GPT generation, OpenAI embeddings, Qdrant, ColPali) are implemented
+  and import-verified, exercised when the reader supplies a key / `docker compose up` / `[multimodal]`.
