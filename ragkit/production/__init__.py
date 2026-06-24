@@ -14,12 +14,20 @@ proves any of this moved a number — is its own top-level module, `ragkit.eval`
 Phase-1 scaffold. Phase 2 exports the top-level conveniences listed below.
 """
 
-# Phase 2 will export: GroundedGenerator (Ch 13), SecureRetriever (Ch 15),
-#                       Router + SemanticCache (Ch 16), Tracer (Ch 16).
+from ragkit.production.generation import GroundedAnswer, GroundedGenerator
+from ragkit.production.observability import psi, psi_alert, trace
+from ragkit.production.security import InjectionDetector, PIIRedactor, enforce_acl
+from ragkit.production.serving import ModelRouter, SemanticCache
+
 __all__ = [
     "GroundedGenerator",
-    "SecureRetriever",
-    "Router",
+    "GroundedAnswer",
+    "PIIRedactor",
+    "InjectionDetector",
+    "enforce_acl",
     "SemanticCache",
-    "Tracer",
+    "ModelRouter",
+    "psi",
+    "psi_alert",
+    "trace",
 ]

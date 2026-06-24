@@ -56,6 +56,20 @@
   - `capstone/app/run.py` (`python -m capstone.app.run "question"`) — answers over the sample corpus;
     abstains on off-corpus questions. Verified end-to-end offline.
   - 4 capstone tests; **46 unit tests pass.**
-- Remaining: the rest of the notebooks (incl. key-requiring Ch 4/7/13), parsing (Ch 2), query
-  transforms/routing (Ch 6), architectures (Ch 9–12), security/serving/observability (Ch 15/16),
-  keyed reproductions, and the routing/hardening/serving capstone layers.
+- **Full `ragkit` library implemented (all 16 chapters' components).** Remaining modules added
+  (parallel agents, each pure-tested where applicable, lazy SDK imports throughout):
+  - `ingestion/parsing` (Ch 2): `parse()` text/markdown/HTML-table/PDF + `html_table_to_markdown`.
+  - `retrieval/query` (Ch 6): `QueryTransform` (HyDE, multi-query, step-back, decompose).
+  - `retrieval/routing` (Ch 6): `ComplexityClassifier`, `SemanticRouter`, `route_by_vectors`.
+  - `architectures/graph` (Ch 9): `GraphIndex` (triple extraction + local/global query).
+  - `architectures/hierarchical` (Ch 10): `ParentChildIndex`, `RaptorTree`.
+  - `architectures/adaptive` (Ch 10): `AdaptiveRAG` (route + CRAG/Self-RAG/FLARE patterns).
+  - `architectures/agentic` (Ch 11): **`EntityResolver`** (deterministic-then-fuzzy canonical IDs,
+    review band), `AgenticRAG` (plan-act-reflect), `MCPSource`.
+  - `architectures/multimodal` (Ch 12): `VisualRetriever` (ColPali, lazy).
+  - `production/security` (Ch 15): `PIIRedactor`, `InjectionDetector`, `enforce_acl`.
+  - `production/serving` (Ch 16): `SemanticCache` (vCache caveat), `ModelRouter`, `stable_prefix`.
+  - `production/observability` (Ch 16): `psi`/`psi_alert` drift, `trace` (OTel, lazy), feedback loop.
+  - Package aggregates (`architectures`, `production`) export the conveniences.
+- **119 unit tests pass**; whole library import-verified.
+- Remaining: per-chapter notebooks for the new modules, keyed reproductions, capstone outer layers.
