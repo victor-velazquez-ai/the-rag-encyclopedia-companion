@@ -34,6 +34,7 @@ class GroundedAnswer:
     text: str
     citations: list[int] = field(default_factory=list)  # passage numbers cited in the text
     abstained: bool = False
+    complexity: str | None = None  # optional Adaptive-RAG routing decision (Ch 10), set by the pipeline
 
 
 def _format_context(passages: list[str]) -> str:

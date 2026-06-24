@@ -17,8 +17,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ragkit.production.generation import ABSTENTION, GroundedAnswer
+from ragkit.production.security import InjectionDetector, PIIRedactor
 from ragkit.retrieval.context import reorder_lost_in_middle
 from ragkit.retrieval.hybrid import BM25, HybridRetriever
+from ragkit.retrieval.routing import ComplexityClassifier
 
 
 # A tiny stopword set so the offline answerer abstains on *content*, not on "the"/"of" overlap.
@@ -57,26 +59,48 @@ class RAGPipeline:
     reranker: object | None = None  # has .rerank(query, passages, top_k)
     top_k: int = 5
     depth: int = 20
+    # --- optional production layers (Ch 15 hardening, Ch 6/10 routing) -------
+    harden: bool = False  # scan retrieved passages for injection; redact PII before the model
+    route: bool = False  # log an Adaptive-RAG complexity decision per query
+
+    def __post_init__(self):
+        self._injection = InjectionDetector() if self.harden else None
+        self._redactor = PIIRedactor() if self.harden else None
+        self._router = ComplexityClassifier() if self.route else None
 
     @classmethod
     def from_corpus(cls, docs: Sequence[tuple[str, str]], generator, *, embedder=None, store=None,
-                    reranker=None, top_k: int = 5, depth: int = 20) -> "RAGPipeline":
-        """``docs`` is (doc_id, text). Dense leg (embedder+store) and reranker are optional."""
+                    reranker=None, top_k: int = 5, depth: int = 20, harden: bool = False,
+                    route: bool = False) -> "RAGPipeline":
+        """``docs`` is (doc_id, text). Dense leg (embedder+store), reranker, and the hardening /
+        routing layers are all optional."""
         retriever = HybridRetriever.from_corpus(docs, embedder=embedder, store=store)
-        return cls(retriever=retriever, doc_text=dict(docs), generator=generator,
-                   reranker=reranker, top_k=top_k, depth=depth)
+        return cls(retriever=retriever, doc_text=dict(docs), generator=generator, reranker=reranker,
+                   top_k=top_k, depth=depth, harden=harden, route=route)
 
     def answer(self, query: str) -> GroundedAnswer:
+        complexity = self._router.classify(query) if self._router else None  # Adaptive-RAG gate (Ch 10)
+
         ranked = self.retriever.search(query, top_k=self.depth, depth=self.depth)
         passages = [self.doc_text[i] for i, _ in ranked if i in self.doc_text]
         if not passages:
-            return GroundedAnswer(text=ABSTENTION, citations=[], abstained=True)
+            return GroundedAnswer(text=ABSTENTION, citations=[], abstained=True, complexity=complexity)
+
         if self.reranker is not None:
             passages = self.reranker.rerank(query, passages, top_k=self.top_k)
         else:
             passages = passages[: self.top_k]
+
+        # Ch 15 hardening: drop injection-bearing passages, then redact PII before the model sees it.
+        if self._injection is not None:
+            passages = [p for p in passages if self._injection.scan(p)[0] < 0.5] or passages
+        if self._redactor is not None:
+            passages = [self._redactor.redact(p)[0] for p in passages]
+
         folded = reorder_lost_in_middle(passages)  # strongest evidence on the attention peaks
-        return self.generator.generate(query, folded)
+        ans = self.generator.generate(query, folded)
+        ans.complexity = complexity
+        return ans
 
 
 __all__ = ["RAGPipeline", "ExtractiveAnswerer", "BM25"]
