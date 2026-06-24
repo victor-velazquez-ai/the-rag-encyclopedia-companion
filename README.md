@@ -28,7 +28,7 @@ the-rag-encyclopedia-repo/
 ├── chapters/        ← THE LEARNING PATH — walk it in book order, hand by hand
 ├── ragkit/          ← THE REUSE SPINE — clean, importable, production-grade library
 ├── capstone/        ← the full enterprise RAG system, everything wired together
-├── data/            ← small sample corpus + golden sets (runs with NO paid API key)
+├── data/            ← small sample corpus + golden sets (tiny; the only cost is your API usage)
 └── docs/            ← setup, how-to-use, provider-swap guide, dataset cards
 ```
 
@@ -41,7 +41,8 @@ Open the chapter folder, run the numbered notebooks top-to-bottom as you read. E
 a single technique and runs live against the sample data.
 
 ```bash
-docker compose up -d          # Qdrant, locally, no keys
+cp .env.example .env          # add your ANTHROPIC_API_KEY + OPENAI_API_KEY
+docker compose up -d          # Qdrant, locally
 make setup                    # install ragkit + deps, load sample data
 make ch07                     # launch Chapter 7's walkthroughs
 ```
@@ -89,20 +90,22 @@ that implements it, and the head-to-head experiment it reproduces.
 
 ---
 
-## The reference stack (all-open, no paid key required)
+## The reference stack (bring your own API key — no GPU)
 
-Every default is the verdict-recommended choice from its chapter, self-hostable and permissively
-licensed. Managed APIs appear only as **one-line config swaps** so you can benchmark them.
+The companion runs on cloud APIs so every example works on a laptop. Each component is a one-line
+provider swap. *(The book's **production** verdict is self-hosting open models — Qwen3, jina — for
+licensing/cost at scale; that's the documented `[selfhost]` swap, see [PROVIDER-SWAP](docs/PROVIDER-SWAP.md).)*
 
-| Role | Default (open, self-host) | Managed swap |
-|---|---|---|
-| Vector store | **Qdrant** (Docker) | — |
-| Embeddings | **Qwen3-Embedding-8B** (Apache-2.0) | Voyage · Gemini |
-| Reranker | **jina-reranker-v3** (0.6B, open) | Cohere Rerank 4 |
-| Sparse leg | **BM25** (+ optional SPLADE-v3) | — |
-| Generator | self-host instruct model via **vLLM** | any OpenAI-compatible endpoint |
+| Role | Default (BYO key) | Key | Swap |
+|---|---|---|---|
+| Generation + LLM rerank | **Claude** `claude-opus-4-8` | `ANTHROPIC_API_KEY` | OpenAI GPT |
+| Embeddings | **OpenAI** `text-embedding-3-large` | `OPENAI_API_KEY` | Voyage |
+| Sparse leg | **BM25** (+ optional SPLADE-v3) | none | — |
+| Vector store | **Qdrant** (local Docker) | none | — |
 
-See [`docs/PROVIDER-SWAP.md`](docs/PROVIDER-SWAP.md) for how the one-line swap works.
+Anthropic has no embeddings API, so the default uses an Anthropic key (generation) **and** an OpenAI
+key (embeddings); set both providers to `openai` to run on a single key. The self-host stack
+(Qwen3 + jina + vLLM) needs no keys but a GPU. See [`docs/PROVIDER-SWAP.md`](docs/PROVIDER-SWAP.md).
 
 ---
 

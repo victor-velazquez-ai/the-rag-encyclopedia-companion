@@ -12,6 +12,19 @@
 - Remaining in Phase 1: the other 14 chapter READMEs + full `ragkit` submodule stubs + `capstone/`
   and `data/` specs.
 
-## Phase 2 — implementation (planned)
-- Runnable notebooks per chapter (+ key ones as scripts), the `ragkit` implementation, the eval
-  harness reproductions, and the assembled `capstone/` — each verified to run on the all-open stack.
+## Phase 2 — implementation (in progress)
+- **Stack pivot: bring-your-own-key cloud APIs** (no GPU). Default generation = Claude
+  `claude-opus-4-8` (Anthropic SDK); embeddings = OpenAI `text-embedding-3-large` (Anthropic has no
+  embeddings API); reranking = LLM-listwise. The book's open self-host stack (Qwen3/jina/vLLM) is the
+  `[selfhost]` extra + a provider swap. Updated README, `.env.example`, SETUP, PROVIDER-SWAP, pyproject.
+- **`ragkit.core` implemented + tested**: `Chunk` (pydantic, with `with_context` for Contextual
+  Retrieval), `Config`/`load_config` (YAML + env-override provider selection), `ProviderRegistry`
+  (the one-line swap mechanism).
+- **`ragkit.production.generation` implemented**: `GroundedGenerator` (Ch 13) — context-faithful
+  system prompt with span citation + abstention; Claude default, OpenAI swap; lazy SDK imports.
+- **Pure spine components implemented + tested**: `retrieval/hybrid/fusion.rrf_fuse` (RRF, Ch 6) and
+  `eval/metrics` (recall@k, MRR, nDCG@k, Ch 14).
+- **20 unit tests pass** (`pytest`) — verify with no API key or network.
+- Remaining: per-chapter notebooks, the rest of `ragkit` (parsing/chunking/embedding/indexing/
+  retrieval/rerank/context/architectures/security/serving/observability), the eval reproduction
+  suite, and the assembled `capstone/`.

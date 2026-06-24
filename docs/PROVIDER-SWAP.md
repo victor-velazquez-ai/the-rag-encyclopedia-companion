@@ -1,45 +1,62 @@
 # Provider swap — one line, no rewrite
 
-The book's promise (Appendix B): every managed alternative is a **config swap, never a rewrite.**
-The pipeline code is identical; only the `provider` changes. This is how you reproduce the
-"managed vs. self-host" comparisons and decide on your own data whether convenience is worth the bill.
+The companion runs on **bring-your-own-key cloud APIs** so every example works on a laptop with no
+GPU. Each swappable component is built behind a factory that reads a `provider` name — the pipeline
+code is identical, only the provider changes. This is how you reproduce the book's "managed vs.
+self-host" comparisons and decide, on your own data, what each option buys you.
+
+> **Book vs. companion.** The book's *production* verdict is to self-host open models (Qwen3
+> embeddings, jina reranker) for licensing and cost at scale (Ch 4/7). The companion defaults to
+> APIs for friction-free learning; self-hosting those open models is the documented swap below.
+
+## The default stack (BYO key)
+
+| Component | Default | Key | Swaps |
+|---|---|---|---|
+| Generation + LLM rerank | **Claude** `claude-opus-4-8` | `ANTHROPIC_API_KEY` | `openai` (GPT) |
+| Embeddings | **OpenAI** `text-embedding-3-large` | `OPENAI_API_KEY` | `voyage` |
+| Reranker | **LLM listwise** (reuses generation) | — | `cohere` |
+| Vector store | **Qdrant** (local Docker) | none | — |
+
+Anthropic has no embeddings endpoint, so the default needs both an Anthropic key (generation) and an
+OpenAI key (embeddings). To run on **one** key, set both providers to `openai`.
 
 ## The pattern
 
-Every swappable component is built behind a small factory that reads a provider name:
-
 ```python
-from ragkit.ingestion import Embedder
-from ragkit.retrieval import Reranker
+from ragkit.production.generation import GroundedGenerator
 
-# default — all-open, self-host
-embedder = Embedder.default()                 # Qwen3-Embedding-8B (Apache-2.0)
-reranker = Reranker.default()                 # jina-reranker-v3 (open)
+gen = GroundedGenerator.default()                 # Claude (claude-opus-4-8)
+ans = gen.generate("What was Q3 revenue?", passages)
+print(ans.text, ans.citations, ans.abstained)
 
-# managed — one line each (reads the key from .env)
-embedder = Embedder.from_provider("voyage")   # or "gemini"
-reranker = Reranker.from_provider("cohere")
+# managed swap — one line, reads the key from .env:
+gen = GroundedGenerator.from_provider("openai")   # GPT
 ```
 
-Or set it declaratively and never touch code:
+Or declaratively, and never touch code:
 
 ```yaml
-# configs/managed.yaml
-embedding: { provider: voyage,  model: voyage-3.5 }
-rerank:    { provider: cohere,  model: rerank-v4.0 }
+# configs/openai.yaml
+generation: { provider: openai, model: gpt-4o }
+embedding:  { provider: openai, model: text-embedding-3-large }
 ```
 
 ```bash
-RAGKIT_CONFIG=configs/managed.yaml make reproduce
+RAGKIT_CONFIG=configs/openai.yaml make reproduce
+# or, no file at all:
+GEN_PROVIDER=openai EMBED_PROVIDER=openai make reproduce
 ```
 
-## Supported providers (Phase 2)
+## Self-hosting the book's verdict picks
 
-| Component | Default (open) | Managed swaps | Key |
-|---|---|---|---|
-| Embeddings | Qwen3-Embedding-8B | `voyage`, `gemini` | `VOYAGE_API_KEY` / `GEMINI_API_KEY` |
-| Reranker | jina-reranker-v3 | `cohere` | `COHERE_API_KEY` |
-| Generator | vLLM (local) | any OpenAI-compatible | `OPENAI_API_KEY` + `OPENAI_BASE_URL` |
+To run the all-open production stack the book recommends (no API keys, needs a GPU), install the
+self-host extra and select the local providers — same pipeline, different config:
 
-The eval harness reports the open and managed runs **on the same axes** (same golden set, same
+```bash
+pip install -e ".[selfhost]"          # sentence-transformers, etc.
+GEN_PROVIDER=vllm EMBED_PROVIDER=qwen3 RERANK_PROVIDER=jina make reproduce
+```
+
+The eval harness reports the API and self-host runs **on the same axes** (same golden set, same
 metrics, plus the cost column) so the comparison is honest.
