@@ -47,6 +47,15 @@
     set — a real measured delta (+0.033 nDCG@5; fusion recovers a title-only-vocabulary query) with a
     cost column, no API key. `chapters/ch14-evaluation/reproduce.py` runs it.
   - **42 unit tests pass.**
+- **Capstone — the assembled end-to-end pipeline, runnable (`make capstone`):**
+  - `capstone/app/pipeline.py` — `RAGPipeline` wires the verdict stack: hybrid retrieve (BM25 + optional
+    dense, RRF) → optional rerank → lost-in-the-middle fold → grounded generate. Dense leg + reranker
+    are opt-in.
+  - `ExtractiveAnswerer` — offline no-key generator (content-term overlap + abstention) so the whole
+    pipeline runs end-to-end without a key; `GroundedGenerator` (Claude/GPT) used when a key is set.
+  - `capstone/app/run.py` (`python -m capstone.app.run "question"`) — answers over the sample corpus;
+    abstains on off-corpus questions. Verified end-to-end offline.
+  - 4 capstone tests; **46 unit tests pass.**
 - Remaining: the rest of the notebooks (incl. key-requiring Ch 4/7/13), parsing (Ch 2), query
   transforms/routing (Ch 6), architectures (Ch 9–12), security/serving/observability (Ch 15/16),
-  keyed reproductions, and `capstone/`.
+  keyed reproductions, and the routing/hardening/serving capstone layers.
