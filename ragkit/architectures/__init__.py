@@ -14,13 +14,19 @@ default.
 Phase-1 scaffold. Phase 2 exports the top-level conveniences listed below.
 """
 
-# Phase 2 will export: GraphRAG (Ch 9), HierarchicalRetriever (Ch 10), AdaptiveRouter (Ch 10),
-#                       AgenticRAG + EntityResolver (Ch 11), VisualRetriever (Ch 12).
+from ragkit.architectures.adaptive import AdaptiveRAG
+from ragkit.architectures.agentic import AgenticRAG, EntityResolver, MCPSource
+from ragkit.architectures.graph import GraphIndex
+from ragkit.architectures.hierarchical import ParentChildIndex, RaptorTree
+from ragkit.architectures.multimodal import VisualRetriever
+
 __all__ = [
-    "GraphRAG",
-    "HierarchicalRetriever",
-    "AdaptiveRouter",
+    "GraphIndex",
+    "ParentChildIndex",
+    "RaptorTree",
+    "AdaptiveRAG",
     "AgenticRAG",
     "EntityResolver",
+    "MCPSource",
     "VisualRetriever",
 ]
