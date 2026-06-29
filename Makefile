@@ -13,7 +13,7 @@ up:  ## Start Qdrant locally (Docker), no API keys needed
 down:  ## Stop local services
 	docker compose down
 
-setup:  ## Install ragkit + dev deps and load the sample data
+setup:  ## Install professional_rag_kit + dev deps and load the sample data
 	pip install -e ".[dev]"
 	$(MAKE) data
 
@@ -21,42 +21,42 @@ data:  ## Download/prepare the sample corpus + golden sets (small, no keys)
 	python -m data.prepare
 
 reproduce:  ## Run the "expensive doesn't always win" experiment suite (offline)
-	python -m ragkit.eval.suite --all
+	python -m professional_rag_kit.eval.suite --all
 
 capstone:  ## Run the assembled end-to-end RAG pipeline over the sample corpus
-	python -m capstone.app.run
+	PYTHONPATH=capstone-project python -m rag_capstone.app.run
 
 test:  ## Run the unit tests (no API key needed)
 	python -m pytest tests/ -q
 
 # --- Per-chapter walkthroughs (launch the chapter's notebooks) ---------------
 ch02:  ## Chapter 2 — Document Processing
-	jupyter lab chapters/ch02-document-processing
+	jupyter lab chapters-companion/ch02-document-processing
 ch03:  ## Chapter 3 — Chunking
-	jupyter lab chapters/ch03-chunking
+	jupyter lab chapters-companion/ch03-chunking
 ch04:  ## Chapter 4 — Embeddings
-	jupyter lab chapters/ch04-embeddings
+	jupyter lab chapters-companion/ch04-embeddings
 ch05:  ## Chapter 5 — Vector Stores
-	jupyter lab chapters/ch05-vector-stores
+	jupyter lab chapters-companion/ch05-vector-stores
 ch06:  ## Chapter 6 — Retrieval & Routing
-	jupyter lab chapters/ch06-retrieval
+	jupyter lab chapters-companion/ch06-retrieval
 ch07:  ## Chapter 7 — Reranking
-	jupyter lab chapters/ch07-reranking
+	jupyter lab chapters-companion/ch07-reranking
 ch08:  ## Chapter 8 — Context Construction
-	jupyter lab chapters/ch08-context-construction
+	jupyter lab chapters-companion/ch08-context-construction
 ch09:  ## Chapter 9 — GraphRAG
-	jupyter lab chapters/ch09-graphrag
+	jupyter lab chapters-companion/ch09-graphrag
 ch10:  ## Chapter 10 — Hierarchical & Adaptive
-	jupyter lab chapters/ch10-adaptive-rag
+	jupyter lab chapters-companion/ch10-adaptive-rag
 ch11:  ## Chapter 11 — Agentic & Multi-System
-	jupyter lab chapters/ch11-agentic-rag
+	jupyter lab chapters-companion/ch11-agentic-rag
 ch12:  ## Chapter 12 — Multimodal
-	jupyter lab chapters/ch12-multimodal
+	jupyter lab chapters-companion/ch12-multimodal
 ch13:  ## Chapter 13 — Grounded Generation
-	jupyter lab chapters/ch13-grounded-generation
+	jupyter lab chapters-companion/ch13-grounded-generation
 ch14:  ## Chapter 14 — Evaluation
-	jupyter lab chapters/ch14-evaluation
+	jupyter lab chapters-companion/ch14-evaluation
 ch15:  ## Chapter 15 — Enterprise Hardening
-	jupyter lab chapters/ch15-enterprise-hardening
+	jupyter lab chapters-companion/ch15-enterprise-hardening
 ch16:  ## Chapter 16 — Performance & Observability
-	jupyter lab chapters/ch16-performance-observability
+	jupyter lab chapters-companion/ch16-performance-observability

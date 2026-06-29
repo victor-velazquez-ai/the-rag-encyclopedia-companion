@@ -18,7 +18,7 @@ make ch07                   # open a chapter's notebooks (any chNN)
 ```
 
 ## What `make setup` does
-1. Installs `ragkit` (editable) plus the dev extras (Jupyter, ruff, pytest).
+1. Installs `professional_rag_kit` (editable) plus the dev extras (Jupyter, ruff, pytest).
 2. Runs `python -m data.prepare` to fetch/prepare the small sample corpus and golden sets.
 
 The library code is testable with no key or network: `pip install -e ".[dev]" && pytest`.

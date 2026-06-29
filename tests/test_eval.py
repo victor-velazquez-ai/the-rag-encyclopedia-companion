@@ -1,6 +1,6 @@
 """Tests for the eval harness (Ch 14): GoldenSet, Harness scoring, and the offline suite."""
 
-from ragkit.eval import GoldenSet, Harness
+from professional_rag_kit.eval import GoldenSet, Harness
 
 
 def _golden():
@@ -47,7 +47,7 @@ def test_compare_sorts_by_ndcg():
 
 def test_offline_suite_runs_and_fusion_does_not_regress():
     # the repo's sample data + suite must run with no key and produce sane numbers
-    from ragkit.eval.suite import _build_retrievers, _load_corpus, _DATA
+    from professional_rag_kit.eval.suite import _build_retrievers, _load_corpus, _DATA
 
     corpus = _load_corpus()
     golden = GoldenSet.from_jsonl(_DATA / "golden" / "qa.jsonl")

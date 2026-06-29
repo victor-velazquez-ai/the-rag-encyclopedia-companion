@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from ragkit.retrieval.hybrid.fusion import rrf_fuse
+from professional_rag_kit.retrieval.hybrid.fusion import rrf_fuse
 
 
 def test_doc_in_both_lists_outranks_doc_in_one():

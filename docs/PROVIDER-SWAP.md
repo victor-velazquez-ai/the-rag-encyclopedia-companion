@@ -24,7 +24,7 @@ OpenAI key (embeddings). To run on **one** key, set both providers to `openai`.
 ## The pattern
 
 ```python
-from ragkit.production.generation import GroundedGenerator
+from professional_rag_kit.production.generation import GroundedGenerator
 
 gen = GroundedGenerator.default()                 # Claude (claude-opus-4-8)
 ans = gen.generate("What was Q3 revenue?", passages)

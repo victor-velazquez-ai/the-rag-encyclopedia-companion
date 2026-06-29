@@ -6,8 +6,8 @@ serialization). The LLM/embedding-backed methods are import-verified only (no ke
 
 import pytest
 
-from ragkit.ingestion.parsing import html_table_to_markdown, parse
-from ragkit.retrieval.routing import ComplexityClassifier, route_by_vectors
+from professional_rag_kit.ingestion.parsing import html_table_to_markdown, parse
+from professional_rag_kit.retrieval.routing import ComplexityClassifier, route_by_vectors
 
 
 # --- ComplexityClassifier (PURE) ---------------------------------------------

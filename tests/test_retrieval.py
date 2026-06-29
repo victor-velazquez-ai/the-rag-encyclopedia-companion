@@ -2,10 +2,10 @@
 
 import pytest
 
-from ragkit.core.config import ProviderRegistry
-from ragkit.retrieval.context import ContextBuilder, mmr, reorder_lost_in_middle
-from ragkit.retrieval.hybrid import BM25, HybridRetriever
-from ragkit.retrieval.rerank import Reranker
+from professional_rag_kit.core.config import ProviderRegistry
+from professional_rag_kit.retrieval.context import ContextBuilder, mmr, reorder_lost_in_middle
+from professional_rag_kit.retrieval.hybrid import BM25, HybridRetriever
+from professional_rag_kit.retrieval.rerank import Reranker
 
 CORPUS = [
     ("d1", "The error code ERR_CONN_4021 means the connection was refused."),

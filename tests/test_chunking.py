@@ -2,8 +2,8 @@
 
 import pytest
 
-from ragkit.core.schema import Chunk
-from ragkit.ingestion.chunking import Chunker
+from professional_rag_kit.core.schema import Chunk
+from professional_rag_kit.ingestion.chunking import Chunker
 
 
 def _doc(nsent: int) -> str:

@@ -1,11 +1,11 @@
 [project]
-name = "ragkit"
+name = "professional-rag-kit"
 version = "0.1.0"
-description = "The RAG Encyclopedia — companion library: production-grade, all-open RAG components."
+description = "The RAG Encyclopedia — companion library (professional-rag-kit): production-grade, all-open RAG components."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Victor B." }]
+authors = [{ name = "Victor Miguel Velazquez Espitia" }]
 
 # Bring-your-own-key API stack: defaults to Claude (generation) + OpenAI (embeddings).
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
   "openai>=1.50",             # embeddings (text-embedding-3) + optional GPT generation (Ch 4)
   "qdrant-client>=1.12",      # vector store, local Docker (Ch 5)
   "rank-bm25>=0.2",           # sparse leg of hybrid (Ch 6)
-  "pydantic>=2",              # core contracts / config (ragkit/core)
+  "pydantic>=2",              # core contracts / config (professional_rag_kit/core)
   "pyyaml>=6",                # config loader
   "numpy>=1.26",
   "typer>=0.12",              # CLI for the eval harness (Ch 14)
@@ -27,10 +27,17 @@ architectures = ["networkx>=3", "graspologic>=3"]    # graph RAG (Ch 9)
 multimodal    = ["pillow>=10", "colpali-engine>=0.3"] # ColPali visual retrieval (Ch 12)
 eval          = ["ragas>=0.2", "pandas>=2"]           # eval harness (Ch 14)
 dev           = ["jupyter", "ruff", "pytest"]
-all           = ["ragkit[managed,selfhost,architectures,multimodal,eval,dev]"]
+all           = ["professional-rag-kit[managed,selfhost,architectures,multimodal,eval,dev]"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.hatch.build.targets.wheel]
+packages = ["professional_rag_kit"]
+
+[tool.pytest.ini_options]
+# professional_rag_kit lives at the repo root; the capstone app lives in capstone-project/.
+pythonpath = [".", "capstone-project"]
 
 [build-system]
 requires = ["hatchling"]

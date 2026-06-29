@@ -5,9 +5,9 @@ Covers the pure, tested surfaces: PIIRedactor (each PII type + clean text), Inje
 (simple->cheap, complex->strong), and psi (no-shift ~0, big-shift > 0.2).
 """
 
-from ragkit.production.observability import psi, psi_alert
-from ragkit.production.security import InjectionDetector, PIIRedactor, enforce_acl
-from ragkit.production.serving import ModelRouter, lookup, stable_prefix
+from professional_rag_kit.production.observability import psi, psi_alert
+from professional_rag_kit.production.security import InjectionDetector, PIIRedactor, enforce_acl
+from professional_rag_kit.production.serving import ModelRouter, lookup, stable_prefix
 
 
 # --- PIIRedactor -------------------------------------------------------------

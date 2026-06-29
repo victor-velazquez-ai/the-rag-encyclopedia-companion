@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from ragkit.eval.metrics import dcg_at_k, mrr, ndcg_at_k, recall_at_k
+from professional_rag_kit.eval.metrics import dcg_at_k, mrr, ndcg_at_k, recall_at_k
 
 
 def test_recall_at_k_is_order_agnostic():

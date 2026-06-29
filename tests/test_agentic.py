@@ -4,7 +4,7 @@ fuzzy-second, the review band, normalization, blocking, and misses."""
 
 import pytest
 
-from ragkit.architectures.agentic import (
+from professional_rag_kit.architectures.agentic import (
     AgenticRAG,
     EntityResolver,
     MCPSource,

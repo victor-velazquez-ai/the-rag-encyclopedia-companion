@@ -1,6 +1,6 @@
 """Test the assembled capstone pipeline end-to-end, offline (no API key)."""
 
-from capstone.app.pipeline import ExtractiveAnswerer, RAGPipeline
+from rag_capstone.app.pipeline import ExtractiveAnswerer, RAGPipeline
 
 CORPUS = [
     ("d1", "Customers may request a refund within thirty days of purchase."),

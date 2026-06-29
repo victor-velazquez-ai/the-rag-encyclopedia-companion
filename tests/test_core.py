@@ -2,8 +2,8 @@
 
 import pytest
 
-from ragkit.core import Chunk, Config, ProviderRegistry, load_config
-from ragkit.production.generation import ABSTENTION, GroundedGenerator
+from professional_rag_kit.core import Chunk, Config, ProviderRegistry, load_config
+from professional_rag_kit.production.generation import ABSTENTION, GroundedGenerator
 
 
 def test_chunk_defaults_and_contextual_prefix():
@@ -36,7 +36,7 @@ def test_key_for_reads_env(monkeypatch):
 
 
 def test_provider_registry_has_generation_backends():
-    # registered by importing ragkit.production.generation
+    # registered by importing professional_rag_kit.production.generation
     assert ProviderRegistry.get("generation", "anthropic")
     assert ProviderRegistry.get("generation", "openai")
 

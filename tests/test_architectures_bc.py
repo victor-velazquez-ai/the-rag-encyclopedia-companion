@@ -5,9 +5,9 @@ LLM-backed paths (GraphIndex.build/global_query, RaptorTree.build/query, Adaptiv
 flare) are lazy patterns over your frontier model and are verified by import + signature, not run.
 """
 
-from ragkit.architectures.adaptive import AdaptiveRAG
-from ragkit.architectures.graph import GraphIndex, parse_triples
-from ragkit.architectures.hierarchical import ParentChildIndex
+from professional_rag_kit.architectures.adaptive import AdaptiveRAG
+from professional_rag_kit.architectures.graph import GraphIndex, parse_triples
+from professional_rag_kit.architectures.hierarchical import ParentChildIndex
 
 
 # --- GraphIndex: from_triples + local_query neighborhood (Ch 9, pure) --------
